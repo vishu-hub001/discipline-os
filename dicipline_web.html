@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discipline | RPG OS V6</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&family=Permanent+Marker&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-current: #09090b;
+            --bg-image: none;
+            --overlay-opacity: 0.65;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-current);
+            background-image: var(--bg-image);
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            transition: background-image 0.8s ease;
+        }
+        
+        /* Dark overlay controlled by user slider */
+        body::before {
+            content: ''; position: fixed; inset: 0; background: rgba(0,0,0,var(--overlay-opacity)); z-index: -1;
+            transition: background 0.3s ease;
+        }
+        
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+        
+        .glass-panel {
+            background: rgba(10, 10, 15, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        }
+
+        /* Table Styling */
+        table { border-collapse: separate; border-spacing: 0; width: max-content; }
+        th, td { border: 1px solid rgba(255,255,255,0.05); text-align: center; height: 40px; min-width: 40px; }
+        th:first-child, td:first-child {
+            position: sticky; left: 0; background: rgba(15, 15, 20, 0.95); z-index: 10;
+            text-align: right; padding-right: 16px; padding-left: 16px;
+            min-width: 240px; border-right: 2px solid rgba(255,255,255,0.15);
+        }
+        thead th { position: sticky; top: 0; background: rgba(15, 15, 20, 0.95); z-index: 5; font-size: 0.75rem; color: #a1a1aa; }
+        thead th:first-child { z-index: 15; border-bottom: 2px solid rgba(255,255,255,0.15); }
+
+        .marker-x { font-family: 'Permanent Marker', cursive; color: #10b981; font-size: 1.4rem; line-height: 1; text-shadow: 0 0 12px rgba(16, 185, 129, 0.5); }
+        .cell-hover:hover { background: rgba(255, 255, 255, 0.1); cursor: pointer; }
+        .today-col { background: rgba(255, 255, 255, 0.05); border-left: 1px solid rgba(255,255,255,0.3); border-right: 1px solid rgba(255,255,255,0.3); }
+
+        /* XP Animations */
+        .xp-float {
+            position: fixed; pointer-events: none; font-weight: 900; font-size: 1.8rem;
+            z-index: 100; animation: floatUp 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        .xp-gain { color: #10b981; text-shadow: 0 0 15px rgba(16, 185, 129, 0.6); }
+        .xp-loss { color: #ef4444; text-shadow: 0 0 15px rgba(239, 68, 68, 0.6); }
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-60px) scale(1.3); opacity: 0; }
+        }
+
+        .coin-float { position: fixed; pointer-events:none; z-index:101; font-weight:900; font-size:1.25rem; color:#fbbf24; text-shadow:0 0 14px rgba(251,191,36,.7); animation:coinFloat 1.15s cubic-bezier(.2,.8,.2,1) forwards; }
+        .reward-float { position:fixed; pointer-events:none; z-index:102; font-weight:900; font-size:1rem; color:#fff; padding:7px 11px; border:1px solid rgba(255,255,255,.12); border-radius:999px; background:rgba(12,12,20,.88); backdrop-filter:blur(8px); box-shadow:0 8px 30px rgba(0,0,0,.35); animation:rewardPop 1.2s ease forwards; }
+        @keyframes coinFloat { 0%{transform:translateY(0) scale(.75);opacity:0} 15%{opacity:1} 100%{transform:translateY(-85px) scale(1.12);opacity:0} }
+        @keyframes rewardPop { 0%{transform:translateY(8px) scale(.8);opacity:0} 18%{transform:translateY(0) scale(1);opacity:1} 100%{transform:translateY(-45px) scale(.96);opacity:0} }
+        .streak-flash { animation:streakFlash .65s ease; }
+        @keyframes streakFlash { 0%,100%{transform:scale(1)} 40%{transform:scale(1.06);filter:brightness(1.5)} }
+
+        /* Fixed the CSS Error from before */
+        .xp-bar-container { width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; margin-top: 8px; }
+        .xp-bar { height: 100%; background: linear-gradient(90deg, #fbbf24, #f59e0b); transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        .bar-container { display: flex; align-items: flex-end; height: 120px; gap: 8px; }
+        .bar { width: 100%; background: #6366f1; border-radius: 4px 4px 0 0; transition: height 0.5s ease; position: relative;}
+        
+        /* Heatmap blocks */
+        .heat-block { width: 14px; height: 14px; border-radius: 3px; background: rgba(255,255,255,0.05); transition: background 0.3s; }
+        .heat-done { background: #10b981; box-shadow: 0 0 8px rgba(16,185,129,0.4); }
+
+        /* === V4 PROGRESSION SYSTEM === */
+        .levelup-overlay{position:fixed;inset:0;z-index:200;background:rgba(3,4,10,.92);backdrop-filter:blur(18px);display:none;align-items:center;justify-content:center;overflow:hidden}
+        .levelup-overlay.show{display:flex;animation:overlayIn .25s ease}
+        .levelup-card{width:min(720px,92vw);text-align:center;padding:46px 36px;border:1px solid rgba(129,140,248,.35);background:linear-gradient(180deg,rgba(20,20,32,.98),rgba(8,8,14,.98));border-radius:32px;box-shadow:0 0 80px rgba(99,102,241,.28);position:relative;overflow:hidden}
+        .levelup-kicker{font-size:.8rem;letter-spacing:.4em;color:#a5b4fc;font-weight:900;text-transform:uppercase}
+        .levelup-number{font-size:clamp(5rem,14vw,9rem);line-height:.9;font-weight:900;color:white;margin:12px 0;background:linear-gradient(180deg,#fff,#a5b4fc);-webkit-background-clip:text;background-clip:text;color:transparent;animation:levelPop .8s cubic-bezier(.2,.8,.2,1)}
+        .levelup-rank{font-size:1.15rem;font-weight:900;letter-spacing:.35em;text-transform:uppercase;color:#fbbf24}
+        .levelup-rewards{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:28px 0}
+        .reward-pill{padding:11px 16px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);font-weight:800}
+        .reward-choice{cursor:pointer;text-align:left;transition:.2s}.reward-choice:hover{transform:translateY(-3px);border-color:#818cf8;background:rgba(99,102,241,.14)}
+        .choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:18px}
+        .particle{position:absolute;width:7px;height:7px;border-radius:50%;background:#a5b4fc;animation:particleFly 1.4s ease-out forwards}
+        @keyframes overlayIn{from{opacity:0}to{opacity:1}} @keyframes levelPop{0%{transform:scale(.35);opacity:0}65%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+        @keyframes particleFly{to{transform:translate(var(--x),var(--y)) scale(0);opacity:0}}
+        .stat-card{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:18px}
+        .mini-progress{height:7px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden}.mini-progress>div{height:100%;border-radius:99px;background:linear-gradient(90deg,#6366f1,#a78bfa);transition:width .5s ease}
+        .badge-card{background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px;transition:.2s}.badge-card:hover{transform:translateY(-2px);border-color:rgba(129,140,248,.5)}
+        .badge-locked{opacity:.38;filter:grayscale(1)}
+        .mission-card{background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:18px}.mission-done{border-color:rgba(16,185,129,.45);background:rgba(16,185,129,.07)}
+        .title-chip{display:inline-flex;align-items:center;padding:5px 10px;border-radius:999px;background:rgba(99,102,241,.13);border:1px solid rgba(129,140,248,.25);color:#c7d2fe;font-size:.7rem;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
+        .roadmap-line{position:relative}.roadmap-line:before{content:'';position:absolute;left:15px;top:18px;bottom:18px;width:2px;background:rgba(255,255,255,.1)}
+        .roadmap-item{position:relative;padding-left:48px;margin:18px 0}.roadmap-dot{position:absolute;left:7px;top:4px;width:18px;height:18px;border-radius:50%;border:3px solid #27272a;background:#09090b;z-index:1}.roadmap-item.done .roadmap-dot{background:#10b981;border-color:#10b981;box-shadow:0 0 16px rgba(16,185,129,.5)}.roadmap-item.current .roadmap-dot{background:#6366f1;border-color:#818cf8;box-shadow:0 0 20px rgba(99,102,241,.7)}
+        .profile-hero{background:radial-gradient(circle at 50% 0%,rgba(99,102,241,.22),transparent 55%),rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.08);border-radius:26px;padding:30px;text-align:center}
+        .score-ring{width:150px;height:150px;border-radius:50%;display:grid;place-items:center;margin:0 auto 16px;background:conic-gradient(#6366f1 var(--score,0%),rgba(255,255,255,.07) 0);position:relative}.score-ring:after{content:'';position:absolute;inset:9px;border-radius:50%;background:#0b0b10}.score-number{position:relative;z-index:1;font-size:3rem;font-weight:900}
+        .streak-fire{font-size:2rem;filter:drop-shadow(0 0 12px rgba(251,191,36,.45))}.pulse{animation:pulseSoft 1.8s infinite}@keyframes pulseSoft{50%{transform:scale(1.03);opacity:.85}}
+        @media(max-width:900px){.choice-grid{grid-template-columns:1fr}.desktop-tabs{flex-wrap:wrap}.desktop-add{width:100%;margin-top:16px}.desktop-add input{flex:1;min-width:120px}}
+
+    </style>
+</head>
+<body class="text-gray-100 min-h-screen flex flex-col items-center py-6 px-4">
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-6 bg-red-900/95 border-2 border-red-500 text-white px-8 py-4 rounded-xl shadow-[0_0_30px_rgba(239,68,68,0.4)] opacity-0 transform -translate-y-10 z-50 pointer-events-none transition-all font-bold text-lg">
+        <i class="fas fa-lock mr-3"></i> <span id="toast-msg">Strict Mode Active.</span>
+    </div>
+
+    <!-- Header & RPG Stats -->
+    <div class="w-full max-w-7xl glass-panel rounded-3xl p-8 mb-6 relative overflow-hidden">
+        <div class="flex justify-between items-start mb-6">
+            <div class="max-w-2xl">
+                <h1 class="text-3xl font-black tracking-widest text-white uppercase mb-4 opacity-50">Discipline OS</h1>
+                <p id="active-quote" class="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 leading-tight" style="font-family: 'Cinzel', serif;">
+                    "We suffer more in imagination than in reality."
+                </p>
+                <p id="active-quote-author" class="text-indigo-400 mt-2 font-bold tracking-widest uppercase text-sm">- Seneca</p>
+            </div>
+            
+            <div class="flex gap-6 bg-black/60 p-5 rounded-2xl border border-white/10 shadow-2xl backdrop-blur-md">
+                <div class="text-center px-4 border-r border-white/10">
+                    <p class="text-xs uppercase tracking-widest text-gray-400 mb-1 font-bold">Level</p>
+                    <p id="stat-level" class="text-4xl font-black text-white leading-none text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-500">1</p>
+                </div>
+                <div class="text-center px-4 border-r border-white/10 w-40">
+                    <p class="text-xs uppercase tracking-widest text-gray-400 mb-1 font-bold">Experience</p>
+                    <p class="text-xl font-black text-yellow-500 leading-none mb-2"><span id="stat-xp">0</span><span class="text-xs text-gray-400"> / <span id="stat-next">200</span></span></p>
+                    <div class="xp-bar-container"><div id="xp-bar-fill" class="xp-bar" style="width: 0%"></div></div>
+                </div>
+                <div class="text-center px-4">
+                    <p class="text-xs uppercase tracking-widest text-gray-400 mb-1 font-bold">Coins</p>
+                    <p class="text-3xl font-black text-yellow-400 leading-none"><i class="fas fa-coins text-lg mr-2 opacity-80"></i><span id="stat-coins">0</span></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-between items-end border-t border-white/10 pt-6">
+            <div class="flex gap-8">
+                <div class="flex gap-6 flex-wrap desktop-tabs">
+                    <button onclick="switchTab('grid')" id="tab-grid" class="text-white font-black uppercase tracking-widest text-sm border-b-2 border-indigo-500 pb-2 transition-all">Today</button>
+                    <button onclick="switchTab('progress')" id="tab-progress" class="text-gray-500 hover:text-white font-bold uppercase tracking-widest text-sm border-b-2 border-transparent pb-2 transition-all">Progress</button>
+                    <button onclick="switchTab('missions')" id="tab-missions" class="text-gray-500 hover:text-white font-bold uppercase tracking-widest text-sm border-b-2 border-transparent pb-2 transition-all">Missions</button>
+                    <button onclick="switchTab('achievements')" id="tab-achievements" class="text-gray-500 hover:text-white font-bold uppercase tracking-widest text-sm border-b-2 border-transparent pb-2 transition-all">Achievements</button>
+                    <button onclick="switchTab('shop')" id="tab-shop" class="text-gray-500 hover:text-white font-bold uppercase tracking-widest text-sm border-b-2 border-transparent pb-2 transition-all">Shop</button>
+                    <button onclick="switchTab('profile')" id="tab-profile" class="text-gray-500 hover:text-white font-bold uppercase tracking-widest text-sm border-b-2 border-transparent pb-2 transition-all">Profile</button>
+                </div>
+            </div>
+            
+            <div class="flex gap-3">
+                <input id="title-input" type="text" placeholder="Design new protocol..." class="bg-black/80 border border-white/10 rounded-xl px-5 py-3 text-white focus:outline-none focus:border-indigo-500 text-sm w-72 font-semibold shadow-inner">
+                <input id="time-input" type="time" class="bg-black/80 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 text-sm cursor-pointer shadow-inner">
+                <button onclick="addHabit()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-black uppercase tracking-wider px-8 py-3 rounded-xl transition-all shadow-[0_0_20px_rgba(79,70,229,0.5)] hover:shadow-[0_0_30px_rgba(79,70,229,0.8)] text-sm">Deploy</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- LEVEL UP / REWARD CEREMONY -->
+    <div id="levelup-overlay" class="levelup-overlay">
+        <div id="levelup-card" class="levelup-card">
+            <div class="levelup-kicker">Progression milestone</div>
+            <div id="levelup-number" class="levelup-number">2</div>
+            <div id="levelup-rank" class="levelup-rank">APPRENTICE</div>
+            <div id="levelup-message" class="text-gray-400 mt-3 font-semibold">You have become stronger through consistency.</div>
+            <div id="levelup-rewards" class="levelup-rewards"></div>
+            <div id="levelup-choice-wrap" class="hidden">
+                <div class="text-xs uppercase tracking-[.25em] text-gray-500 font-black">Choose your level reward</div>
+                <div id="levelup-choices" class="choice-grid"></div>
+            </div>
+            <button id="levelup-close" onclick="closeLevelUp()" class="mt-6 px-8 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black uppercase tracking-widest">Continue</button>
+        </div>
+    </div>
+
+    <!-- MAIN VIEWPORT -->
+    <div class="w-full max-w-7xl flex-1 glass-panel rounded-3xl overflow-hidden shadow-2xl relative h-[60vh]">
+        
+        <!-- GRID VIEW -->
+        <div id="view-grid" class="absolute inset-0 overflow-auto custom-scrollbar bg-black/30"></div>
+
+
+        <!-- PROGRESS VIEW -->
+        <div id="view-progress" class="absolute inset-0 overflow-auto p-8 hidden flex-col gap-8 bg-black/40 custom-scrollbar">
+            <div class="flex justify-between items-end"><div><h2 class="text-3xl font-black uppercase tracking-widest">Progress</h2><p class="text-gray-500 mt-2">Your long-term climb, milestones and weekly performance.</p></div><div id="progress-title-chip" class="title-chip">Initiate</div></div>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="stat-card"><div class="text-xs text-gray-500 uppercase tracking-widest font-black">Discipline Score</div><div id="progress-score" class="text-4xl font-black mt-2">0</div><div id="progress-score-delta" class="text-xs text-emerald-400 font-bold mt-1">—</div></div>
+                <div class="stat-card"><div class="text-xs text-gray-500 uppercase tracking-widest font-black">Current Streak</div><div class="mt-2 flex items-center gap-2"><span class="streak-fire">🔥</span><span id="progress-streak" class="text-4xl font-black">0</span></div></div>
+                <div class="stat-card"><div class="text-xs text-gray-500 uppercase tracking-widest font-black">Best Streak</div><div id="progress-best-streak" class="text-4xl font-black mt-2">0</div></div>
+                <div class="stat-card"><div class="text-xs text-gray-500 uppercase tracking-widest font-black">Completed</div><div id="progress-total-done" class="text-4xl font-black mt-2">0</div></div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="stat-card"><h3 class="font-black uppercase tracking-widest text-sm mb-5">Attributes</h3><div id="attribute-list" class="space-y-5"></div></div>
+                <div class="stat-card"><h3 class="font-black uppercase tracking-widest text-sm mb-5">Weekly comparison</h3><div id="weekly-comparison" class="space-y-4"></div></div>
+            </div>
+            <div class="stat-card"><h3 class="font-black uppercase tracking-widest text-sm mb-5">Progression roadmap</h3><div id="roadmap" class="roadmap-line"></div></div>
+            <div id="history-panel" class="bg-black/50 border border-white/10 rounded-2xl p-6 shadow-xl"></div>
+        </div>
+
+        <!-- MISSIONS VIEW -->
+        <div id="view-missions" class="absolute inset-0 overflow-auto p-8 hidden flex-col gap-6 bg-black/40 custom-scrollbar">
+            <div><h2 class="text-3xl font-black uppercase tracking-widest">Daily Missions</h2><p class="text-gray-500 mt-2">Bonus objectives. Your normal protocols remain the core progression.</p></div>
+            <div id="mission-container" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div>
+        </div>
+
+        <!-- ACHIEVEMENTS VIEW -->
+        <div id="view-achievements" class="absolute inset-0 overflow-auto p-8 hidden flex-col gap-6 bg-black/40 custom-scrollbar">
+            <div class="flex justify-between items-end"><div><h2 class="text-3xl font-black uppercase tracking-widest">Achievements</h2><p id="achievement-summary" class="text-gray-500 mt-2">0 unlocked</p></div></div>
+            <div id="achievement-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </div>
+
+        <!-- PROFILE VIEW -->
+        <div id="view-profile" class="absolute inset-0 overflow-auto p-8 hidden flex-col gap-6 bg-black/40 custom-scrollbar">
+            <div class="profile-hero"><div id="profile-score-ring" class="score-ring"><div id="profile-score" class="score-number">0</div></div><div id="profile-rank" class="text-2xl font-black uppercase tracking-[.25em]">INITIATE</div><div id="profile-title" class="title-chip mt-3">THE BEGINNING</div><div class="mt-6 max-w-xl mx-auto"><div class="flex justify-between text-xs font-black uppercase tracking-widest text-gray-500"><span>Level <span id="profile-level">1</span></span><span><span id="profile-xp">0</span> / <span id="profile-next">200</span> XP</span></div><div class="xp-bar-container mt-2"><div id="profile-xp-bar" class="xp-bar" style="width:0%"></div></div></div></div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4"><div class="stat-card text-center"><div class="text-xs text-gray-500 uppercase tracking-widest font-black">Streak</div><div id="profile-streak" class="text-3xl font-black mt-2">0</div></div><div class="stat-card text-center"><div class="text-xs text-gray-500 uppercase tracking-widest font-black">Best</div><div id="profile-best" class="text-3xl font-black mt-2">0</div></div><div class="stat-card text-center"><div class="text-xs text-gray-500 uppercase tracking-widest font-black">Coins</div><div id="profile-coins" class="text-3xl font-black mt-2">0</div></div><div class="stat-card text-center"><div class="text-xs text-gray-500 uppercase tracking-widest font-black">Badges</div><div id="profile-badges" class="text-3xl font-black mt-2">0</div></div></div>
+            <div class="stat-card"><h3 class="font-black uppercase tracking-widest text-sm mb-5">Unlocked Titles</h3><div id="title-container" class="flex flex-wrap gap-3"></div></div>
+            <div class="stat-card border border-red-500/15"><div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4"><div><h3 class="font-black uppercase tracking-widest text-sm">Danger Zone</h3><p class="text-xs text-gray-500 mt-2">Reset habits, XP, coins, streaks, achievements and cosmetics on this device.</p></div><button onclick="resetAllData()" class="px-5 py-3 rounded-xl border border-red-500/40 bg-red-950/30 text-red-300 hover:bg-red-900/40 hover:text-white font-black uppercase tracking-widest text-xs transition-all"><i class="fas fa-rotate-left mr-2"></i>Reset all data</button></div></div>
+        </div>
+
+        <!-- ANALYTICS & LONG TERM HISTORY -->
+        <div id="view-history" class="absolute inset-0 overflow-auto p-8 hidden flex-col gap-8 bg-black/40 custom-scrollbar">
+            <h2 class="text-3xl font-black text-white mb-2 uppercase tracking-widest"><i class="fas fa-chart-pie text-indigo-500 mr-3"></i> Performance Analytics</h2>
+            
+            <div class="grid grid-cols-3 gap-6">
+                <!-- Pie Chart -->
+                <div class="bg-black/50 border border-white/10 rounded-2xl p-6 flex flex-col items-center justify-center shadow-xl">
+                    <h3 class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-6">Total Completion Rate</h3>
+                    <div id="pie-chart" class="w-32 h-32 rounded-full shadow-[0_0_30px_rgba(99,102,241,0.3)] mb-4"></div>
+                    <p id="pie-stat" class="text-4xl font-black text-white">0%</p>
+                </div>
+                <!-- 7-Day Graph -->
+                <div class="col-span-2 bg-black/50 border border-white/10 rounded-2xl p-6 flex flex-col shadow-xl">
+                    <h3 class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-6">Past 7 Days Output</h3>
+                    <div id="bar-graph" class="bar-container flex-1"></div>
+                    <div id="bar-labels" class="flex justify-between mt-3 text-xs text-gray-500 font-bold tracking-wider"></div>
+                </div>
+            </div>
+
+            <!-- LONG TERM YEARLY ARCHIVE -->
+            <div class="bg-black/50 border border-white/10 rounded-2xl p-6 shadow-xl">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-gray-400 text-xs font-bold uppercase tracking-widest"><i class="fas fa-calendar-alt mr-2 text-indigo-400"></i> Yearly Archive (365 Days)</h3>
+                    <select id="heatmap-select" onchange="renderHeatmap()" class="bg-black border border-white/20 text-white rounded px-3 py-1 text-sm outline-none">
+                        <option value="">Select a Protocol...</option>
+                    </select>
+                </div>
+                <div id="heatmap-grid" class="flex flex-wrap gap-1">
+                    <!-- Blocks injected via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- SHOP VIEW -->
+        <div id="view-shop" class="absolute inset-0 overflow-auto p-8 hidden flex-col bg-black/40 custom-scrollbar">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-3xl font-black text-white uppercase tracking-widest"><i class="fas fa-store text-yellow-500 mr-3"></i> The Black Market</h2>
+                
+                <!-- BACKGROUND OPACITY SLIDER -->
+                <div class="flex items-center gap-3 bg-black/60 px-4 py-2 rounded-xl border border-white/10">
+                    <i class="fas fa-moon text-gray-400"></i>
+                    <div class="flex flex-col">
+                        <span class="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Wallpaper Dimmer</span>
+                        <input type="range" min="0" max="0.95" step="0.05" id="opacity-slider" oninput="updateOpacity(this.value)" onchange="saveOpacity(this.value)" class="w-32 cursor-pointer">
+                    </div>
+                </div>
+            </div>
+
+            <!-- SHOP CATEGORY TABS -->
+            <div class="flex gap-4 mb-8 border-b border-white/10 pb-4">
+                <button onclick="setShopCategory('bg')" id="shop-tab-bg" class="px-6 py-2 rounded-lg bg-indigo-600 text-white font-bold tracking-widest uppercase text-sm transition-all shadow-[0_0_15px_rgba(79,70,229,0.4)]">Wallpapers</button>
+                <button onclick="setShopCategory('sound')" id="shop-tab-sound" class="px-6 py-2 rounded-lg bg-white/5 text-gray-400 hover:text-white font-bold tracking-widest uppercase text-sm transition-all border border-transparent hover:border-white/10">Audio</button>
+                <button onclick="setShopCategory('quote')" id="shop-tab-quote" class="px-6 py-2 rounded-lg bg-white/5 text-gray-400 hover:text-white font-bold tracking-widest uppercase text-sm transition-all border border-transparent hover:border-white/10">Quotes</button>
+            </div>
+            
+            <!-- CUSTOM AUDIO (Only shows on audio tab) -->
+            <div id="custom-audio-box" class="hidden bg-black/60 border border-white/10 p-4 rounded-xl flex items-center gap-4 mb-6">
+                <i class="fas fa-file-audio text-pink-500 text-2xl ml-2"></i>
+                <div class="flex-1">
+                    <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Use Custom Local Alarm (.mp3)</p>
+                    <div class="flex gap-2">
+                        <input type="text" id="custom-audio-input" placeholder="e.g. my_song.mp3" class="bg-black/80 border border-white/20 rounded-lg px-4 py-2 text-white text-sm focus:border-pink-500 outline-none w-full max-w-sm">
+                        <button onclick="saveCustomAudio()" class="bg-pink-600 hover:bg-pink-500 text-white text-sm font-bold px-6 py-2 rounded-lg transition-colors">Apply File</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="shop-container" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Shop Items rendered via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ALARM MODAL -->
+    <div id="alarm-modal" class="fixed inset-0 bg-black/95 z-50 hidden flex-col items-center justify-center backdrop-blur-xl">
+        <i class="fas fa-bolt text-indigo-500 text-7xl mb-8 animate-pulse drop-shadow-[0_0_20px_rgba(99,102,241,0.8)]"></i>
+        <h2 class="text-6xl font-black text-white tracking-widest mb-4">TIME TO EXECUTE</h2>
+        <p id="alarm-task-name" class="text-4xl text-gray-300 font-extrabold mb-16 uppercase tracking-widest"></p>
+        
+        <div class="flex gap-8 z-10">
+            <button onclick="dismissAlarm('snooze')" class="px-10 py-5 rounded-xl border-2 border-white/10 text-gray-400 hover:bg-white/5 hover:text-white font-black tracking-widest transition-all text-xl uppercase">Snooze 5m</button>
+            <button onclick="dismissAlarm('start')" class="px-16 py-5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black tracking-widest shadow-[0_0_40px_rgba(79,70,229,0.8)] hover:shadow-[0_0_60px_rgba(79,70,229,1)] transition-all text-2xl uppercase">I'm on it</button>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA SETUP (V3) ---
+        let appData = JSON.parse(localStorage.getItem('discipline_rpg_v6')) || {
+            habits: [],
+            stats: { xp: 0, level: 1, coins: 0 },
+            inventory: { bg: ['bg_default'], sound: ['snd_default'], quote: ['qt_0'] },
+            equipped: { bg: 'bg_default', sound: 'snd_default', quote: 'qt_0' },
+            settings: { opacity: 0.65, streakShield: 0 },
+            customAudioFile: '',
+            progression: { achievements: [], titles: ['The Beginning'], missionDate: '', missions: {}, lastScore: 0, weeklySnapshots: [], claimedLevelRewards: [], claimedStreakMilestones: [], dailyBonusDates: [], totalCompletions: 0 }
+        };
+
+        // V6 starts a fresh run and intentionally does not import V5 progress.
+        if (!localStorage.getItem('discipline_rpg_v6')) localStorage.removeItem('discipline_rpg_v5');
+
+        const THE_SHOP = [
+            // WALLPAPERS
+            { id: 'bg_default', type: 'bg', name: 'The Void', cost: 0, reqLevel: 1, desc: 'Pure black focus.', value: 'none', color: '#09090b' },
+            { id: 'bg_mountains', type: 'bg', name: 'Summit Peak', cost: 200, reqLevel: 2, desc: 'Cold, harsh mountains.', value: 'url(https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1920&q=80)', color: '#000' },
+            { id: 'bg_cyber', type: 'bg', name: 'Cyberpunk City', cost: 400, reqLevel: 3, desc: 'Neon future grind.', value: 'url(https://images.unsplash.com/photo-1515630278258-407f66498911?auto=format&fit=crop&w=1920&q=80)', color: '#000' },
+            { id: 'bg_ocean', type: 'bg', name: 'Deep Ocean', cost: 500, reqLevel: 4, desc: 'Calm but ruthless.', value: 'url(https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=1920&q=80)', color: '#000' },
+            { id: 'bg_forest', type: 'bg', name: 'Dark Forest', cost: 600, reqLevel: 5, desc: 'Isolation and focus.', value: 'url(https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1920&q=80)', color: '#000' },
+            { id: 'bg_space', type: 'bg', name: 'Deep Space', cost: 800, reqLevel: 6, desc: 'Infinite scale.', value: 'url(https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=1920&q=80)', color: '#000' },
+            { id: 'bg_blood', type: 'bg', name: 'Crimson Moon', cost: 1000, reqLevel: 7, desc: 'Aggressive energy.', value: 'url(https://images.unsplash.com/photo-1532767153582-b1a0e5145009?auto=format&fit=crop&w=1920&q=80)', color: '#000' },
+            { id: 'bg_minimal', type: 'bg', name: 'White Marble', cost: 1200, reqLevel: 8, desc: 'Clean, elegant workspace.', value: 'url(https://images.unsplash.com/photo-1508898578281-774ac4893c0c?auto=format&fit=crop&w=1920&q=80)', color: '#000' },
+            // UPDATED: Better Lightning & Gold images
+            { id: 'bg_storm', type: 'bg', name: 'Lightning Storm', cost: 1500, reqLevel: 9, desc: 'Raw power and chaos.', value: 'url(https://images.unsplash.com/photo-1595833929007-885741630138?auto=format&fit=crop&w=1920&q=80)', color: '#000' },
+            { id: 'bg_gold', type: 'bg', name: 'Golden Sands', cost: 2000, reqLevel: 10, desc: 'The ultimate luxury.', value: 'url(https://images.unsplash.com/photo-1509316785289-025f5b846b35?auto=format&fit=crop&w=1920&q=80)', color: '#000' },
+
+            // AUDIO
+            { id: 'snd_default', type: 'sound', name: 'Zen Chime', cost: 0, reqLevel: 1, desc: 'Calm, gentle bell.' },
+            { id: 'snd_arcade', type: 'sound', name: 'Retro Arcade', cost: 100, reqLevel: 2, desc: '8-Bit level up sound.' },
+            { id: 'snd_bass', type: 'sound', name: 'Cinematic Bass', cost: 200, reqLevel: 3, desc: 'Heavy thud.' },
+            { id: 'snd_alert', type: 'sound', name: 'Red Alert', cost: 300, reqLevel: 4, desc: 'Fast, urgent beeping.' },
+            { id: 'snd_sci', type: 'sound', name: 'Sci-Fi Sweep', cost: 400, reqLevel: 5, desc: 'Futuristic scan.' },
+            { id: 'snd_pulse', type: 'sound', name: 'Energy Pulse', cost: 500, reqLevel: 6, desc: 'Electronic throb.' },
+            { id: 'snd_bell', type: 'sound', name: 'Church Bell', cost: 600, reqLevel: 7, desc: 'Deep, resonant gong.' },
+            { id: 'snd_wind', type: 'sound', name: 'Wind Howl', cost: 700, reqLevel: 8, desc: 'White noise sweep.' },
+            { id: 'snd_glitch', type: 'sound', name: 'Cyber Glitch', cost: 800, reqLevel: 9, desc: 'Distorted electronic.' },
+            { id: 'snd_epic', type: 'sound', name: 'Epic Horn', cost: 1000, reqLevel: 10, desc: 'Massive brass blast.' },
+            { id: 'snd_custom', type: 'sound', name: 'Custom MP3 File', cost: 0, reqLevel: 1, desc: 'Uses your local audio file.' },
+
+            // QUOTES
+            { id: 'qt_0', type: 'quote', name: 'Seneca', cost: 0, reqLevel: 1, value: '"We suffer more in imagination than in reality."', author: 'Seneca' },
+            { id: 'qt_1', type: 'quote', name: 'Goggins', cost: 100, reqLevel: 2, value: '"Don\'t stop when you\'re tired. Stop when you\'re done."', author: 'David Goggins' },
+            { id: 'qt_2', type: 'quote', name: 'Aurelius', cost: 150, reqLevel: 2, value: '"You have power over your mind - not outside events."', author: 'Marcus Aurelius' },
+            { id: 'qt_3', type: 'quote', name: 'Tyson', cost: 200, reqLevel: 3, value: '"Discipline is doing what you hate to do, but doing it like you love it."', author: 'Mike Tyson' },
+            { id: 'qt_4', type: 'quote', name: 'Aristotle', cost: 250, reqLevel: 3, value: '"We are what we repeatedly do. Excellence, then, is not an act, but a habit."', author: 'Aristotle' },
+            { id: 'qt_5', type: 'quote', name: 'Musashi', cost: 300, reqLevel: 4, value: '"There is nothing outside of yourself that can ever enable you to get better."', author: 'Miyamoto Musashi' },
+            { id: 'qt_6', type: 'quote', name: 'Epictetus', cost: 350, reqLevel: 4, value: '"No man is free who is not master of himself."', author: 'Epictetus' },
+            { id: 'qt_7', type: 'quote', name: 'Churchill', cost: 400, reqLevel: 5, value: '"If you\'re going through hell, keep going."', author: 'Winston Churchill' },
+            { id: 'qt_8', type: 'quote', name: 'Ali', cost: 450, reqLevel: 5, value: '"Suffer now and live the rest of your life as a champion."', author: 'Muhammad Ali' },
+            { id: 'qt_9', type: 'quote', name: 'Rohn', cost: 500, reqLevel: 6, value: '"We must all suffer one of two things: the pain of discipline or the pain of regret."', author: 'Jim Rohn' },
+            { id: 'qt_10', type: 'quote', name: 'Jobs', cost: 550, reqLevel: 6, value: '"Focus is about saying no."', author: 'Steve Jobs' },
+            { id: 'qt_11', type: 'quote', name: 'Bruce Lee', cost: 600, reqLevel: 7, value: '"It is not the daily increase but daily decrease. Hack away at the unessential."', author: 'Bruce Lee' },
+            { id: 'qt_12', type: 'quote', name: 'Lincoln', cost: 650, reqLevel: 7, value: '"Give me six hours to chop down a tree and I will spend the first four sharpening the axe."', author: 'Abraham Lincoln' },
+            { id: 'qt_13', type: 'quote', name: 'Sun Tzu', cost: 700, reqLevel: 8, value: '"Victorious warriors win first and then go to war."', author: 'Sun Tzu' },
+            { id: 'qt_14', type: 'quote', name: 'Naval', cost: 750, reqLevel: 8, value: '"All the returns in life come from compound interest."', author: 'Naval Ravikant' },
+            { id: 'qt_15', type: 'quote', name: 'Clear', cost: 800, reqLevel: 9, value: '"You do not rise to the level of your goals. You fall to the level of your systems."', author: 'James Clear' },
+            { id: 'qt_16', type: 'quote', name: 'Jocko', cost: 850, reqLevel: 9, value: '"Discipline equals freedom."', author: 'Jocko Willink' },
+            { id: 'qt_17', type: 'quote', name: 'Huberman', cost: 900, reqLevel: 10, value: '"Attach your dopamine to the effort, not the reward."', author: 'Andrew Huberman' },
+            { id: 'qt_18', type: 'quote', name: 'Nietzsche', cost: 950, reqLevel: 10, value: '"He who has a why to live for can bear almost any how."', author: 'Friedrich Nietzsche' },
+            { id: 'qt_19', type: 'quote', name: 'Frankl', cost: 1000, reqLevel: 11, value: '"Between stimulus and response there is a space. In that space is our power to choose."', author: 'Viktor Frankl' }
+        ];
+
+        let activeShopCategory = 'bg';
+
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth();
+        const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+        const getLocalYYYYMMDD = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        let todayKey = getLocalYYYYMMDD(new Date());
+
+        // --- OPACITY CONTROL ---
+        document.getElementById('opacity-slider').value = appData.settings.opacity;
+        function updateOpacity(val) { document.documentElement.style.setProperty('--overlay-opacity', val); }
+        function saveOpacity(val) { appData.settings.opacity = val; localStorage.setItem('discipline_rpg_v5', JSON.stringify(appData)); }
+
+        function saveData() {
+            ensureProgression();
+            localStorage.setItem('discipline_rpg_v3', JSON.stringify(appData));
+            renderStats();
+            applyEquipped();
+            renderAnalytics();
+            updateHeatmapDropdown();
+            if(document.getElementById('view-progress')?.style.display==='flex') renderProgress();
+            if(document.getElementById('view-missions')?.style.display==='flex') renderMissions();
+            if(document.getElementById('view-achievements')?.style.display==='flex') renderAchievements();
+            if(document.getElementById('view-profile')?.style.display==='flex') renderProfile();
+        }
+
+        function saveCustomAudio() {
+            const input = document.getElementById('custom-audio-input').value.trim();
+            appData.customAudioFile = input;
+            saveData();
+            document.getElementById('custom-audio-input').value = '';
+            document.getElementById('custom-audio-input').placeholder = input || "e.g. my_song.mp3";
+            alert("Custom audio file saved!");
+        }
+
+        // --- RPG ENGINE ---
+        function gainRewards(e, amount) {
+            ensureProgression();
+            const oldLevel=appData.stats.level;
+            appData.stats.xp=Math.max(0,appData.stats.xp+amount);
+            if(amount>0) appData.stats.coins+=amount;
+            const newLevel=Math.floor(appData.stats.xp/200)+1;
+            appData.stats.level=newLevel;
+            saveData();
+            if(e){const floatEl=document.createElement('div');floatEl.className=`xp-float ${amount>0?'xp-gain':'xp-loss'}`;floatEl.innerText=amount>0?`+${amount} XP`:`${amount} XP`;floatEl.style.left=`${e.clientX}px`;floatEl.style.top=`${e.clientY}px`;document.body.appendChild(floatEl);setTimeout(()=>floatEl.remove(),1000); if(amount>0){spawnFloat(`+${amount} 🪙`,e.clientX+42,e.clientY+8,'coin-float'); spawnFloat('REWARD!',e.clientX-20,e.clientY-24,'reward-float')}}
+            if(amount>0){appData.progression.totalCompletions=(appData.progression.totalCompletions||0)+1; dailyCompletionBonus(e); rewardStreakMilestone();}
+            if(newLevel>oldLevel) showLevelUp(newLevel,oldLevel);
+            ensureTitles();checkAchievements();
+        }
+        function showLevelUp(level,oldLevel){
+            const overlay=document.getElementById('levelup-overlay');document.getElementById('levelup-number').innerText=level;document.getElementById('levelup-rank').innerText=rankForLevel(level).name;document.getElementById('levelup-message').innerText=level>=100?'You reached the Ascendant path.':`You crossed Level ${level}. Keep building, one day at a time.`;
+            let reward=level%10===0?500:100;appData.stats.coins+=reward;let rewards=[`+${reward} 🪙`];if(level%5===0)rewards.push('New title');if(level%10===0)rewards.push('Rare unlock');document.getElementById('levelup-rewards').innerHTML=rewards.map(x=>`<span class="reward-pill">${x}</span>`).join('');
+            let choices=level%5===0?[['coins','500 Coins','Take a coin bonus'],['title','Special Title','Unlock a progression title'],['theme','Theme Token','Unlock a future cosmetic']]:[];document.getElementById('levelup-choice-wrap').classList.toggle('hidden',choices.length===0);document.getElementById('levelup-choices').innerHTML=choices.map(([id,n,d])=>`<button class="reward-pill reward-choice" onclick="claimLevelChoice('${id}',${level})"><div class="font-black">${n}</div><div class="text-xs text-gray-500 mt-1">${d}</div></button>`).join('');
+            overlay.classList.add('show');document.body.style.overflow='hidden';for(let i=0;i<40;i++){let q=document.createElement('span');q.className='particle';q.style.left='50%';q.style.top='50%';q.style.setProperty('--x',`${(Math.random()-.5)*700}px`);q.style.setProperty('--y',`${(Math.random()-.5)*500}px`);document.getElementById('levelup-card').appendChild(q);setTimeout(()=>q.remove(),1500)}
+            playAudioLogic('snd_epic');saveData();
+        }
+        function claimLevelChoice(id,level){let key=level+':'+id;if((appData.progression.claimedLevelRewards||[]).includes(key))return;appData.progression.claimedLevelRewards.push(key);if(id==='coins')appData.stats.coins+=500;if(id==='title'){let t=`Level ${level} Veteran`;if(!appData.progression.titles.includes(t))appData.progression.titles.push(t)}if(id==='theme')showToast('Theme token unlocked — cosmetic slot reserved.');saveData();showToast('Level reward claimed');}
+        function closeLevelUp(){document.getElementById('levelup-overlay').classList.remove('show');document.body.style.overflow='';renderAllProgression()}
+
+        function renderStats() {
+            document.getElementById('stat-level').innerText = appData.stats.level;
+            document.getElementById('stat-xp').innerText = appData.stats.xp;
+            const nextLevelXp = appData.stats.level * 200;
+            const currentLevelBaseXp = (appData.stats.level - 1) * 200;
+            const progress = ((appData.stats.xp - currentLevelBaseXp) / (nextLevelXp - currentLevelBaseXp)) * 100;
+            document.getElementById('stat-next').innerText = nextLevelXp;
+            document.getElementById('xp-bar-fill').style.width = `${Math.max(0, Math.min(100, progress))}%`;
+            document.getElementById('stat-coins').innerText = appData.stats.coins;
+        }
+
+        function applyEquipped() {
+            const qData = THE_SHOP.find(i => i.id === appData.equipped.quote);
+            document.getElementById('active-quote').innerText = qData ? qData.value : '"We suffer more in imagination than in reality."';
+            document.getElementById('active-quote-author').innerText = qData ? `- ${qData.author}` : '- Seneca';
+            
+            const bgData = THE_SHOP.find(i => i.id === appData.equipped.bg);
+            if (bgData) {
+                document.documentElement.style.setProperty('--bg-image', bgData.value);
+                document.documentElement.style.setProperty('--bg-current', bgData.color);
+            }
+            updateOpacity(appData.settings.opacity);
+            document.getElementById('custom-audio-input').placeholder = appData.customAudioFile || "e.g. alarm.mp3";
+        }
+
+
+        // === V4 PROGRESSION ENGINE ===
+        const RANKS = [
+            {min:1,name:'Initiate'}, {min:5,name:'Apprentice'}, {min:10,name:'Disciplined'}, {min:20,name:'Warrior'},
+            {min:30,name:'Elite'}, {min:50,name:'Master'}, {min:75,name:'Grandmaster'}, {min:100,name:'Ascendant'}
+        ];
+        const TITLES = [
+            {name:'The Beginning',minLevel:1},{name:'Early Riser',minLevel:5},{name:'The Executor',minLevel:10},{name:'Iron Mind',minLevel:20},
+            {name:'Unbreakable',minLevel:30},{name:'Consistency Master',minLevel:50},{name:'Grandmaster',minLevel:75},{name:'Ascendant',minLevel:100}
+        ];
+        const ACHIEVEMENTS = [
+            {id:'first',icon:'fa-shoe-prints',name:'First Step',desc:'Complete your first protocol.',test:()=>totalDone()>=1,reward:50},
+            {id:'streak3',icon:'fa-fire',name:'Three Days Strong',desc:'Reach a 3-day streak.',test:()=>currentStreak()>=3,reward:75},
+            {id:'streak7',icon:'fa-bolt',name:'Week of Discipline',desc:'Reach a 7-day streak.',test:()=>currentStreak()>=7,reward:150},
+            {id:'perfect7',icon:'fa-crown',name:'Perfect Week',desc:'Complete every protocol for 7 consecutive days.',test:()=>perfectDays(7),reward:250},
+            {id:'done50',icon:'fa-medal',name:'Iron Mind',desc:'Complete 50 protocol actions.',test:()=>totalDone()>=50,reward:300},
+            {id:'streak14',icon:'fa-shield-alt',name:'Unbreakable',desc:'Reach a 14-day streak.',test:()=>currentStreak()>=14,reward:500},
+            {id:'streak30',icon:'fa-gem',name:'Thirty Days',desc:'Reach a 30-day streak.',test:()=>currentStreak()>=30,reward:1000},
+            {id:'perfect30',icon:'fa-mountain',name:'The Summit',desc:'Complete every protocol for 30 consecutive days.',test:()=>perfectDays(30),reward:2000},
+            {id:'done100',icon:'fa-100',name:'Century',desc:'Complete 100 protocol actions.',test:()=>totalDone()>=100,reward:1000},
+            {id:'level10',icon:'fa-star',name:'Elite Arrival',desc:'Reach Level 10.',test:()=>appData.stats.level>=10,reward:500},
+            {id:'level25',icon:'fa-chess-king',name:'Veteran',desc:'Reach Level 25.',test:()=>appData.stats.level>=25,reward:1500},
+            {id:'level50',icon:'fa-dragon',name:'Grandmaster Path',desc:'Reach Level 50.',test:()=>appData.stats.level>=50,reward:3000}
+        ];
+        function ensureProgression(){
+            appData.progression=appData.progression||{achievements:[],titles:['The Beginning'],missionDate:'',missions:{},lastScore:0,weeklySnapshots:[],claimedLevelRewards:[],claimedStreakMilestones:[],dailyBonusDates:[],totalCompletions:0};
+            appData.progression.achievements=appData.progression.achievements||[];
+            appData.progression.titles=appData.progression.titles||['The Beginning'];
+            appData.progression.claimedLevelRewards=appData.progression.claimedLevelRewards||[]; appData.progression.claimedStreakMilestones=appData.progression.claimedStreakMilestones||[]; appData.progression.dailyBonusDates=appData.progression.dailyBonusDates||[]; appData.progression.totalCompletions=appData.progression.totalCompletions||0;
+            if(!appData.settings) appData.settings={opacity:.65,streakShield:0};
+            if(typeof appData.settings.streakShield!=='number') appData.settings.streakShield=0;
+        }
+        function rankForLevel(level){let r=RANKS[0];RANKS.forEach(x=>{if(level>=x.min)r=x});return r}
+        function totalDone(){return appData.habits.reduce((n,h)=>n+Object.values(h.history||{}).filter(Boolean).length,0)}
+        function dayDone(dateKey){return appData.habits.length>0&&appData.habits.every(h=>!!h.history?.[dateKey])}
+        function currentStreak(){let d=new Date();let streak=0;for(let i=0;i<370;i++){let key=getLocalYYYYMMDD(d);if(dayDone(key)){streak++;d.setDate(d.getDate()-1)}else break}return streak}
+        function bestStreak(){let best=0,run=0;let d=new Date();d.setDate(d.getDate()-369);for(let i=0;i<370;i++){let key=getLocalYYYYMMDD(d);if(dayDone(key)){run++;best=Math.max(best,run)}else run=0;d.setDate(d.getDate()+1)}return best}
+        function perfectDays(n){if(appData.habits.length===0)return false;let d=new Date();for(let i=0;i<n;i++){if(!dayDone(getLocalYYYYMMDD(d)))return false;d.setDate(d.getDate()-1)}return true}
+        function disciplineScore(){
+            if(!appData.habits.length)return 0;
+            let done=totalDone();let days=Math.max(1,Math.min(30,new Date().getDate()));let possible=appData.habits.length*days;
+            let completion=Math.min(100,Math.round(done/Math.max(1,possible)*100));
+            let streak=Math.min(100,currentStreak()/30*100);let consistency=Math.min(100,bestStreak()/30*100);
+            let recent=0;for(let i=0;i<7;i++){let d=new Date();d.setDate(d.getDate()-i);recent+=appData.habits.filter(h=>h.history?.[getLocalYYYYMMDD(d)]).length}
+            let recentPct=Math.round(recent/(Math.max(1,appData.habits.length*7))*100);
+            return Math.round(completion*.35+streak*.2+consistency*.15+recentPct*.3);
+        }
+        function attributes(){
+            let score=disciplineScore();let completion=appData.habits.length?Math.round(totalDone()/Math.max(1,appData.habits.length*Math.max(1,new Date().getDate()))*100):0;
+            return {Discipline:score,Consistency:Math.min(100,Math.round(bestStreak()/30*100)),Execution:completion,Focus:Math.min(100,Math.round((currentStreak()*3+score*.7)))};
+        }
+        function ensureTitles(){TITLES.forEach(t=>{if(appData.stats.level>=t.minLevel&&!appData.progression.titles.includes(t.name))appData.progression.titles.push(t.name)})}
+        function checkAchievements(){
+            ensureProgression();let unlocked=[];
+            ACHIEVEMENTS.forEach(a=>{if(!appData.progression.achievements.includes(a.id)&&a.test()){appData.progression.achievements.push(a.id);appData.stats.coins+=a.reward;unlocked.push(a)}});
+            ensureTitles();if(unlocked.length){unlocked.forEach(a=>showToast(`Achievement unlocked: ${a.name} +${a.reward} coins`));saveData()}
+            return unlocked;
+        }
+        function dailyMissions(){
+            ensureProgression();let today=todayKey;
+            if(appData.progression.missionDate!==today){
+                appData.progression.missionDate=today;appData.progression.missions={
+                    complete3:{goal:Math.min(3,Math.max(1,appData.habits.length)),reward:100,label:'Complete 3 protocol actions'},
+                    perfect:{goal:1,reward:150,label:'Complete every protocol today'},
+                    streak:{goal:1,reward:75,label:'Maintain your current streak'},
+                    action:{goal:Math.max(1,appData.habits.length?appData.habits.length:1),reward:75,label:'Complete today\'s core actions'}
+                };
+                Object.keys(appData.progression.missions).forEach(k=>appData.progression.missions[k].claimed=false)
+            }
+            let doneToday=appData.habits.filter(h=>h.history?.[todayKey]).length;let all=dayDone(todayKey);
+            let m=appData.progression.missions;
+            return {done3:doneToday>=m.complete3.goal,perfect:all,streak:currentStreak()>=1,action:doneToday>=m.action.goal,doneToday};
+        }
+        function renderMissions(){ensureProgression();let st=dailyMissions(),m=appData.progression.missions;let defs=[['complete3','complete3','fa-crosshairs'],['perfect','perfect','fa-crown'],['streak','streak','fa-fire'],['action','action','fa-check-double']];document.getElementById('mission-container').innerHTML=defs.map(([key,prop,icon])=>{let done=st[prop],x=m[key];return `<div class="mission-card ${done?'mission-done':''}"><div class="flex justify-between items-start"><div class="flex gap-4"><div class="bg-white/5 w-11 h-11 rounded-xl flex items-center justify-center"><i class="fas ${icon} text-indigo-400"></i></div><div><div class="font-black uppercase tracking-wide">${x.label}</div><div class="text-xs text-gray-500 mt-1">Reward: +${x.reward} coins</div></div></div><div class="text-emerald-400 font-black">${done?'✓ DONE':'IN PROGRESS'}</div></div><div class="mini-progress mt-5"><div style="width:${done?100:Math.min(100,Math.round(st.doneToday/Math.max(1,x.goal)*100))}%"></div></div></div>`}).join('');
+            defs.forEach(([key,prop])=>{if(st[prop]&&!m[key].claimed){m[key].claimed=true;appData.stats.coins+=m[key].reward;appData.stats.xp+=Math.round(m[key].reward/2);showToast(`Mission complete: +${m[key].reward} coins`);saveData()}})
+        }
+        function renderAchievements(){let c=document.getElementById('achievement-container');let unlocked=appData.progression.achievements||[];document.getElementById('achievement-summary').innerText=`${unlocked.length} / ${ACHIEVEMENTS.length} unlocked`;c.innerHTML=ACHIEVEMENTS.map(a=>{let ok=unlocked.includes(a.id);return `<div class="badge-card ${ok?'':'badge-locked'}"><div class="flex justify-between items-start"><div class="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center"><i class="fas ${a.icon} text-xl ${ok?'text-yellow-400':'text-gray-500'}"></i></div><div class="text-xs font-black uppercase tracking-widest ${ok?'text-emerald-400':'text-gray-600'}">${ok?'Unlocked':'Locked'}</div></div><h3 class="font-black mt-5">${a.name}</h3><p class="text-sm text-gray-500 mt-2">${a.desc}</p><div class="text-xs text-yellow-500 font-bold mt-4">+${a.reward} coins</div></div>`}).join('')}
+        function renderProgress(){let score=disciplineScore(),attrs=attributes();document.getElementById('progress-score').innerText=score;document.getElementById('progress-score-delta').innerText=score>=appData.progression.lastScore?`↑ ${score-appData.progression.lastScore} vs last check`:`↓ ${appData.progression.lastScore-score} vs last check`;document.getElementById('progress-streak').innerText=currentStreak();document.getElementById('progress-best-streak').innerText=bestStreak();document.getElementById('progress-total-done').innerText=totalDone();document.getElementById('progress-title-chip').innerText=rankForLevel(appData.stats.level).name;document.getElementById('attribute-list').innerHTML=Object.entries(attrs).map(([k,v])=>`<div><div class="flex justify-between mb-2"><span class="font-bold">${k}</span><span class="text-gray-400 font-black">${Math.round(v)}</span></div><div class="mini-progress"><div style="width:${Math.min(100,v)}%"></div></div></div>`).join('');
+            let current=0,previous=0;for(let i=0;i<7;i++){let d=new Date();d.setDate(d.getDate()-i);current+=appData.habits.filter(h=>h.history?.[getLocalYYYYMMDD(d)]).length}for(let i=7;i<14;i++){let d=new Date();d.setDate(d.getDate()-i);previous+=appData.habits.filter(h=>h.history?.[getLocalYYYYMMDD(d)]).length}document.getElementById('weekly-comparison').innerHTML=`<div class="flex justify-between"><span class="text-gray-400">This week</span><b>${current} actions</b></div><div class="flex justify-between"><span class="text-gray-400">Last week</span><b>${previous} actions</b></div><div class="text-emerald-400 font-black text-lg">${current>=previous?'↑':'↓'} ${Math.abs(current-previous)} actions</div>`;
+            let milestones=[1,5,10,20,30,50,75,100];document.getElementById('roadmap').innerHTML=milestones.map(l=>{let r=rankForLevel(l).name;let done=appData.stats.level>=l,current=appData.stats.level<l&&(milestones.indexOf(l)===milestones.findIndex(x=>x>appData.stats.level));return `<div class="roadmap-item ${done?'done':''} ${current?'current':''}"><div class="roadmap-dot"></div><div class="flex justify-between"><div><b>Level ${l}</b><div class="text-xs text-gray-500 mt-1">${r} rank</div></div><div class="text-xs font-black ${done?'text-emerald-400':'text-gray-600'}">${done?'UNLOCKED':'LOCKED'}</div></div></div>`}).join('');
+            document.getElementById('history-panel').innerHTML='<h3 class="font-black uppercase tracking-widest text-sm mb-5">365-day protocol history</h3>'+appData.habits.map(h=>{let count=Object.values(h.history||{}).filter(Boolean).length;return `<div class="mb-4"><div class="flex justify-between text-sm mb-2"><b>${h.title}</b><span class="text-gray-500">${count} completions</span></div><div class="mini-progress"><div style="width:${Math.min(100,count/100*100)}%"></div></div></div>`}).join('')||'<p class="text-gray-500">Add a protocol to start building history.</p>';
+            appData.progression.lastScore=score;
+        }
+        function renderProfile(){let score=disciplineScore(),rank=rankForLevel(appData.stats.level),st=currentStreak(),best=bestStreak(),xp=appData.stats.xp,next=appData.stats.level*200,base=(appData.stats.level-1)*200,p=Math.max(0,Math.min(100,(xp-base)/(next-base)*100));document.getElementById('profile-score-ring').style.setProperty('--score',score+'%');document.getElementById('profile-score').innerText=score;document.getElementById('profile-rank').innerText=rank.name;document.getElementById('profile-title').innerText=appData.progression.activeTitle|| (appData.progression.titles||['The Beginning']).slice(-1)[0];document.getElementById('profile-level').innerText=appData.stats.level;document.getElementById('profile-xp').innerText=xp;document.getElementById('profile-next').innerText=next;document.getElementById('profile-xp-bar').style.width=p+'%';document.getElementById('profile-streak').innerText=st;document.getElementById('profile-best').innerText=best;document.getElementById('profile-coins').innerText=appData.stats.coins;document.getElementById('profile-badges').innerText=(appData.progression.achievements||[]).length;document.getElementById('title-container').innerHTML=(appData.progression.titles||[]).map(t=>`<button onclick="equipTitle('${t.replace(/'/g,"\\'")}')" class="title-chip hover:border-indigo-400 transition-all">${t}</button>`).join('')}
+        function equipTitle(t){appData.progression.activeTitle=t;saveData();renderProfile();showToast(`Title equipped: ${t}`)}
+        function weeklySnapshot(){let now=new Date();if(now.getDay()!==0)return;let key=getLocalYYYYMMDD(now);if(appData.progression.weeklySnapshots?.[0]?.date===key)return;appData.progression.weeklySnapshots=appData.progression.weeklySnapshots||[];appData.progression.weeklySnapshots.unshift({date:key,score:disciplineScore(),done:totalDone()});appData.progression.weeklySnapshots=appData.progression.weeklySnapshots.slice(0,8)}
+        function renderAllProgression(){ensureProgression();checkAchievements();renderMissions();renderAchievements();renderProgress();renderProfile()}
+
+        // --- CORE HABIT FEATURES ---
+        function addHabit() {
+            const title = document.getElementById('title-input').value.trim();
+            const time = document.getElementById('time-input').value;
+            if (!title) return;
+            appData.habits.push({ id: Date.now(), title, time, history: {}, notifiedToday: false });
+            document.getElementById('title-input').value = '';
+            document.getElementById('time-input').value = '';
+            saveData();
+            renderGrid();
+            updateHeatmapDropdown();
+        }
+
+        function removeHabit(id) {
+            if(confirm("Delete this protocol entirely?")) {
+                appData.habits = appData.habits.filter(h => h.id !== id);
+                saveData();
+                renderGrid();
+                updateHeatmapDropdown();
+            }
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            toast.classList.remove('opacity-0', '-translate-y-10');
+            clearTimeout(window.__toastTimer);
+            window.__toastTimer=setTimeout(() => toast.classList.add('opacity-0', '-translate-y-10'), 3000);
+        }
+        function resetAllData(){
+            const ok=confirm('RESET EVERYTHING?\n\nThis will permanently clear your habits, XP, coins, streaks, achievements, titles, shop unlocks and settings on this device.');
+            if(!ok)return;
+            localStorage.removeItem('discipline_rpg_v6');
+            appData={habits:[],stats:{xp:0,level:1,coins:0},inventory:{bg:['bg_default'],sound:['snd_default'],quote:['qt_0']},equipped:{bg:'bg_default',sound:'snd_default',quote:'qt_0'},settings:{opacity:.65,streakShield:0},customAudioFile:'',progression:{achievements:[],titles:['The Beginning'],missionDate:'',missions:{},lastScore:0,weeklySnapshots:[],claimedLevelRewards:[],claimedStreakMilestones:[],dailyBonusDates:[],totalCompletions:0}};
+            saveData(); renderGrid(); renderHeatmap(); renderAllProgression(); switchTab('grid'); showToast('SYSTEM RESET — fresh run started');
+        }
+        function spawnFloat(text,x,y,kind='reward-float'){
+            const el=document.createElement('div'); el.className=kind; el.innerText=text; el.style.left=`${Math.max(12,Math.min(window.innerWidth-160,x||window.innerWidth/2))}px`; el.style.top=`${Math.max(60,Math.min(window.innerHeight-80,y||window.innerHeight/2))}px`; document.body.appendChild(el); setTimeout(()=>el.remove(),1250);
+        }
+        function rewardStreakMilestone(){
+            const st=currentStreak(); const milestones={3:100,7:200,14:350,30:750,50:1200,100:2500};
+            const reward=milestones[st]; if(!reward || appData.progression.claimedStreakMilestones.includes(st)) return;
+            appData.progression.claimedStreakMilestones.push(st); appData.stats.coins+=reward; saveData();
+            spawnFloat(`🔥 ${st} DAY STREAK  +${reward} 🪙`,window.innerWidth/2-90,window.innerHeight*.28);
+            showToast(`STREAK MILESTONE! ${st} days • +${reward} coins`);
+        }
+        function dailyCompletionBonus(e){
+            const key=todayKey; if(!dayDone(key) || appData.progression.dailyBonusDates.includes(key)) return;
+            appData.progression.dailyBonusDates.push(key); appData.stats.xp+=100; appData.stats.coins+=100; appData.stats.level=Math.floor(appData.stats.xp/200)+1; saveData();
+            spawnFloat('🎯 DAILY COMPLETE  +100 XP  +100 🪙', e?.clientX||window.innerWidth/2, e?.clientY||window.innerHeight/2);
+            showToast('PERFECT DAY BONUS! +100 XP +100 coins');
+        }
+
+        function toggleCell(e, habitId, dateKey) {
+            if (dateKey !== todayKey) { showToast("Strict Mode: Only today's actions dictate your future."); return; }
+            const habit = appData.habits.find(h => h.id === habitId);
+            if (!habit) return;
+            const wasDone = habit.history[dateKey];
+            habit.history[dateKey] = !wasDone;
+
+            if (!wasDone) {
+                playCompletionClick();
+                gainRewards(e, 50);
+                showToast(`✓ ${habit.title} — EXECUTED`);
+            } else if (appData.stats.xp >= 50) {
+                playUndoClick();
+                gainRewards(e, -50);
+                showToast(`↩ ${habit.title} — completion removed`);
+            }
+
+            saveData();
+            renderGrid();
+            renderHeatmap();
+            checkAchievements();
+            if(document.getElementById('view-missions')?.style.display==='flex') renderMissions();
+            if(document.getElementById('view-progress')?.style.display==='flex') renderProgress();
+            if(document.getElementById('view-profile')?.style.display==='flex') renderProfile();
+        }
+
+        function switchTab(tab) {
+            const views=['grid','progress','missions','achievements','shop','profile'];views.forEach(v=>{let el=document.getElementById('view-'+v);if(el)el.style.display=tab===v?(v==='grid'?'block':'flex'):'none'});
+            const tabs=['grid','progress','missions','achievements','shop','profile'];const active="text-white font-black uppercase tracking-widest text-sm border-b-2 border-indigo-500 pb-2 transition-all";const inactive="text-gray-500 hover:text-white font-bold uppercase tracking-widest text-sm border-b-2 border-transparent pb-2 transition-all";tabs.forEach(v=>{let el=document.getElementById('tab-'+v);if(el)el.className=tab===v?active:inactive});
+            if(tab==='shop')renderShop();if(tab==='history')renderAnalytics();if(['progress','missions','achievements','profile'].includes(tab))renderAllProgression();
+        }
+
+        // --- GRID RENDERING ---
+        function renderGrid() {
+            const container = document.getElementById('view-grid');
+            let html = `<table><thead><tr><th></th>`;
+            for (let i = 1; i <= daysInMonth; i++) {
+                let dateObj = new Date(currentYear, currentMonth, i);
+                let isToday = getLocalYYYYMMDD(dateObj) === todayKey;
+                html += `<th class="${isToday ? 'bg-indigo-600 text-white font-black' : ''}">${i}</th>`;
+            }
+            html += `</tr><tr><th style="border-bottom: 2px solid rgba(255,255,255,0.15);"></th>`;
+            const dayLetters = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+            for (let i = 1; i <= daysInMonth; i++) {
+                let dateObj = new Date(currentYear, currentMonth, i);
+                let isToday = getLocalYYYYMMDD(dateObj) === todayKey;
+                html += `<th style="border-bottom: 2px solid rgba(255,255,255,0.15);" class="${isToday ? 'bg-indigo-600 text-white font-black' : ''}">${dayLetters[dateObj.getDay()]}</th>`;
+            }
+            html += `</tr></thead><tbody>`;
+
+            appData.habits.forEach(h => {
+                html += `<tr><td>
+                    <div class="flex justify-between items-center w-full">
+                        <button onclick="removeHabit(${h.id})" class="text-gray-600 hover:text-red-500 transition-colors mr-3"><i class="fas fa-trash-alt text-sm"></i></button>
+                        <div class="flex flex-col items-end">
+                            <span class="text-white font-bold text-sm tracking-wide">${h.title}</span>
+                            <span class="text-xs text-indigo-400 tracking-widest font-bold">${h.time || 'ANYTIME'}</span>
+                        </div>
+                    </div>
+                </td>`;
+                for (let i = 1; i <= daysInMonth; i++) {
+                    let dateObj = new Date(currentYear, currentMonth, i);
+                    let dateKey = getLocalYYYYMMDD(dateObj);
+                    let isToday = dateKey === todayKey;
+                    let cellClass = `cell-hover ${isToday ? 'today-col' : ''}`;
+                    html += `<td class="${cellClass}" onclick="toggleCell(event, ${h.id}, '${dateKey}')">
+                        ${h.history[dateKey] ? '<span class="marker-x">✓</span>' : ''}
+                    </td>`;
+                }
+                html += `</tr>`;
+            });
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+        }
+
+        // --- ANALYTICS & HEATMAP ---
+        function renderAnalytics() {
+            if (appData.habits.length === 0) return;
+            let totalPossible = appData.habits.length * new Date().getDate(); 
+            let totalDone = 0;
+            let last7DaysCount = [0, 0, 0, 0, 0, 0, 0];
+            let barLabelsHtml = '';
+            
+            for (let i = 6; i >= 0; i--) {
+                let d = new Date(); d.setDate(d.getDate() - i);
+                barLabelsHtml += `<span>${d.getDate()}/${d.getMonth()+1}</span>`;
+            }
+            document.getElementById('bar-labels').innerHTML = barLabelsHtml;
+
+            appData.habits.forEach(h => {
+                for (let i = 1; i <= new Date().getDate(); i++) {
+                    if (h.history[getLocalYYYYMMDD(new Date(currentYear, currentMonth, i))]) totalDone++;
+                }
+                for (let i = 6; i >= 0; i--) {
+                    let d = new Date(); d.setDate(d.getDate() - i);
+                    if (h.history[getLocalYYYYMMDD(d)]) last7DaysCount[6-i]++;
+                }
+            });
+
+            let percentage = totalPossible === 0 ? 0 : Math.round((totalDone / totalPossible) * 100);
+            document.getElementById('pie-stat').innerText = percentage + '%';
+            document.getElementById('pie-chart').style.background = `conic-gradient(#6366f1 0%, #6366f1 ${percentage}%, rgba(255,255,255,0.05) ${percentage}%, rgba(255,255,255,0.05) 100%)`;
+
+            let maxCount = Math.max(...last7DaysCount, 1); 
+            let barsHtml = '';
+            last7DaysCount.forEach(count => {
+                let height = (count / maxCount) * 100;
+                barsHtml += `<div class="flex-1 flex flex-col justify-end group"><div class="text-center text-indigo-400 text-xs font-bold mb-1">${count}</div><div class="bar" style="height: ${height}%;"></div></div>`;
+            });
+            document.getElementById('bar-graph').innerHTML = barsHtml;
+        }
+
+        function updateHeatmapDropdown() {
+            const select = document.getElementById('heatmap-select');
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">Select a Protocol...</option>';
+            appData.habits.forEach(h => {
+                select.innerHTML += `<option value="${h.id}">${h.title}</option>`;
+            });
+            if (currentVal) select.value = currentVal;
+            else if (appData.habits.length > 0) select.value = appData.habits[0].id;
+        }
+
+        function renderHeatmap() {
+            const habitId = document.getElementById('heatmap-select').value;
+            const container = document.getElementById('heatmap-grid');
+            container.innerHTML = '';
+            
+            if (!habitId) { container.innerHTML = '<p class="text-gray-500 text-sm">Select a protocol to view history.</p>'; return; }
+            const habit = appData.habits.find(h => h.id == habitId);
+            if (!habit) return;
+
+            // Generate 365 blocks
+            let html = '';
+            for (let i = 364; i >= 0; i--) {
+                let d = new Date(); d.setDate(d.getDate() - i);
+                let dateKey = getLocalYYYYMMDD(d);
+                let isDone = habit.history[dateKey];
+                
+                // Tooltip on hover
+                let title = `${d.toDateString()}: ${isDone ? 'Completed' : 'Missed'}`;
+                html += `<div class="heat-block ${isDone ? 'heat-done' : ''}" title="${title}"></div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        // --- TABBED SHOP ---
+        function setShopCategory(cat) {
+            activeShopCategory = cat;
+            const activeClass = "px-6 py-2 rounded-lg bg-indigo-600 text-white font-bold tracking-widest uppercase text-sm transition-all shadow-[0_0_15px_rgba(79,70,229,0.4)]";
+            const inactiveClass = "px-6 py-2 rounded-lg bg-white/5 text-gray-400 hover:text-white font-bold tracking-widest uppercase text-sm transition-all border border-transparent hover:border-white/10";
+            
+            document.getElementById('shop-tab-bg').className = cat === 'bg' ? activeClass : inactiveClass;
+            document.getElementById('shop-tab-sound').className = cat === 'sound' ? activeClass : inactiveClass;
+            document.getElementById('shop-tab-quote').className = cat === 'quote' ? activeClass : inactiveClass;
+            
+            document.getElementById('custom-audio-box').style.display = cat === 'sound' ? 'flex' : 'none';
+            renderShop();
+        }
+
+        function renderShop() {
+            const container = document.getElementById('shop-container');
+            container.innerHTML = '';
+            
+            const filteredItems = THE_SHOP.filter(item => item.type === activeShopCategory);
+
+            filteredItems.forEach(item => {
+                const isUnlocked = appData.inventory[item.type].includes(item.id);
+                const isEquipped = appData.equipped[item.type] === item.id;
+                const levelMet = appData.stats.level >= item.reqLevel;
+                const canAfford = appData.stats.coins >= item.cost;
+                
+                // Purchase/Equip Button
+                let btnHtml = '';
+                if (isEquipped) {
+                    btnHtml = `<button disabled class="w-full py-2.5 bg-indigo-900/50 text-indigo-300 font-black tracking-widest rounded-lg border border-indigo-500 cursor-not-allowed uppercase text-xs">Equipped</button>`;
+                } else if (isUnlocked) {
+                    btnHtml = `<button onclick="equipItem('${item.id}', '${item.type}')" class="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white font-black tracking-widest rounded-lg transition-colors uppercase text-xs">Equip</button>`;
+                } else if (!levelMet) {
+                    btnHtml = `<button disabled class="w-full py-2.5 bg-black/80 text-red-500 font-bold tracking-widest rounded-lg border border-red-900/50 cursor-not-allowed uppercase text-xs"><i class="fas fa-lock mr-2"></i>Lvl ${item.reqLevel}</button>`;
+                } else {
+                    btnHtml = `<button onclick="buyItem('${item.id}')" class="w-full py-2.5 ${canAfford ? 'bg-yellow-600 hover:bg-yellow-500 text-white shadow-[0_0_15px_rgba(202,138,4,0.4)]' : 'bg-black/80 text-gray-600 cursor-not-allowed border border-white/10'} font-black tracking-widest rounded-lg transition-all uppercase text-xs">Buy - ${item.cost}</button>`;
+                }
+
+                // Preview Button (Only for Sound and BG)
+                let previewBtn = '';
+                if (item.type === 'sound' && item.id !== 'snd_custom') {
+                    previewBtn = `<button onclick="previewAudio('${item.id}')" class="bg-pink-600/20 text-pink-400 hover:bg-pink-600 hover:text-white px-3 py-1 rounded-md text-xs font-bold transition-colors border border-pink-500/50"><i class="fas fa-play"></i></button>`;
+                } else if (item.type === 'bg') {
+                    previewBtn = `<button onclick="previewBg('${item.id}')" class="bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white px-3 py-1 rounded-md text-xs font-bold transition-colors border border-blue-500/50"><i class="fas fa-eye"></i></button>`;
+                }
+
+                let icon = item.type === 'bg' ? 'fa-image' : item.type === 'sound' ? 'fa-music' : 'fa-quote-right';
+                let colorClass = item.type === 'bg' ? 'text-blue-400' : item.type === 'sound' ? 'text-pink-400' : 'text-green-400';
+
+                // Display Quotes properly
+                let descriptionHtml = `<p class="text-sm text-gray-400 mb-6 font-medium">${item.desc}</p>`;
+                if (item.type === 'quote') {
+                    descriptionHtml = `<p class="text-sm text-gray-300 italic mb-2 font-serif">${item.value}</p><p class="text-xs text-indigo-400 font-bold mb-6">- ${item.author}</p>`;
+                }
+
+                container.innerHTML += `
+                    <div class="bg-black/60 border ${isEquipped ? 'border-indigo-500 shadow-[0_0_30px_rgba(79,70,229,0.3)]' : 'border-white/10'} rounded-3xl p-5 flex flex-col justify-between backdrop-blur-md">
+                        <div>
+                            <div class="flex justify-between items-start mb-4">
+                                <div class="bg-white/5 w-10 h-10 rounded-full flex items-center justify-center border border-white/10"><i class="fas ${icon} text-gray-300 text-sm"></i></div>
+                                ${previewBtn}
+                            </div>
+                            <h3 class="text-lg font-black text-white mb-2 uppercase tracking-wide">${item.name}</h3>
+                            ${descriptionHtml}
+                        </div>
+                        ${btnHtml}
+                    </div>
+                `;
+            });
+        }
+
+        function buyItem(id) {
+            const item = THE_SHOP.find(i => i.id === id);
+            if (appData.stats.coins >= item.cost && appData.stats.level >= item.reqLevel) {
+                appData.stats.coins -= item.cost;
+                appData.inventory[item.type].push(item.id);
+                saveData();
+                renderShop();
+                showToast(`Purchased: ${item.name}`);
+            }
+        }
+
+        function equipItem(id, type) {
+            appData.equipped[type] = id;
+            saveData();
+            renderShop();
+        }
+
+        // --- PREVIEW ENGINES ---
+        let previewTimer=null;
+        function previewBg(id) {
+            const bgData = THE_SHOP.find(i => i.id === id); if(!bgData)return;
+            document.documentElement.style.setProperty('--bg-image', bgData.value);
+            document.documentElement.style.setProperty('--bg-current', bgData.color);
+            showToast('Previewing Background for 3 seconds...');
+            clearTimeout(previewTimer); previewTimer=setTimeout(applyEquipped,3000);
+        }
+
+        function previewAudio(id) {
+            playAudioLogic(id);
+        }
+
+        // --- AUDIO ENGINE (LOUD) ---
+        let activeAlarmHabitId = null;
+        let alarmAudioContext = null;
+        let alarmInterval = null;
+        let customAudioPlayer = null;
+
+        function playCompletionClick() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const t = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(660, t);
+                osc.frequency.exponentialRampToValueAtTime(990, t + 0.09);
+                gain.gain.setValueAtTime(0.0001, t);
+                gain.gain.exponentialRampToValueAtTime(0.18, t + 0.012);
+                gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.start(t); osc.stop(t + 0.14);
+                setTimeout(() => ctx.close(), 250);
+            } catch (_) {}
+        }
+
+        function playUndoClick() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const t = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(420, t);
+                osc.frequency.exponentialRampToValueAtTime(280, t + 0.10);
+                gain.gain.setValueAtTime(0.0001, t);
+                gain.gain.exponentialRampToValueAtTime(0.10, t + 0.012);
+                gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.start(t); osc.stop(t + 0.13);
+                setTimeout(() => ctx.close(), 250);
+            } catch (_) {}
+        }
+
+        function playAudioLogic(soundId) {
+            // Synthesizer for built-in sounds (Max Volume)
+            if (!alarmAudioContext) alarmAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const ctx = alarmAudioContext;
+            const t = ctx.currentTime;
+            
+            if (soundId === 'snd_default') {
+                [523.25, 659.25, 783.99].forEach((f, i) => { playOsc(ctx, 'sine', f, t + i*0.2, 0.5, 1.5); });
+            } else if (soundId === 'snd_arcade') {
+                playOsc(ctx, 'square', 300, t, 0.4, 0.1, 800);
+            } else if (soundId === 'snd_bass') {
+                playOsc(ctx, 'sine', 150, t, 1.0, 1.0, 30);
+            } else if (soundId === 'snd_alert') {
+                playOsc(ctx, 'square', 800, t, 0.3, 0.1); playOsc(ctx, 'square', 800, t+0.15, 0.3, 0.1);
+            } else if (soundId === 'snd_sci') {
+                playOsc(ctx, 'sawtooth', 800, t, 0.3, 0.5, 200);
+            } else if (soundId === 'snd_pulse') {
+                playOsc(ctx, 'sine', 200, t, 0.8, 0.4, 200);
+            } else if (soundId === 'snd_bell') {
+                playOsc(ctx, 'sine', 300, t, 0.8, 3.0); playOsc(ctx, 'sine', 600, t, 0.4, 2.0);
+            } else if (soundId === 'snd_wind') {
+                playOsc(ctx, 'sawtooth', 50, t, 0.5, 2.0, 100);
+            } else if (soundId === 'snd_glitch') {
+                playOsc(ctx, 'square', 150, t, 0.5, 0.1, 800); playOsc(ctx, 'sawtooth', 600, t+0.1, 0.5, 0.1, 100);
+            } else if (soundId === 'snd_epic') {
+                playOsc(ctx, 'sawtooth', 150, t, 0.8, 1.5); playOsc(ctx, 'square', 152, t, 0.5, 1.5);
+            }
+        }
+
+        function playOsc(ctx, type, freq, time, vol, dur, endFreq = null) {
+            let osc = ctx.createOscillator(); let gain = ctx.createGain();
+            osc.type = type; osc.frequency.setValueAtTime(freq, time);
+            if(endFreq) osc.frequency.exponentialRampToValueAtTime(endFreq, time + dur);
+            gain.gain.setValueAtTime(vol, time); // HIGH VOLUME
+            gain.gain.exponentialRampToValueAtTime(0.01, time + dur);
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.start(time); osc.stop(time + dur);
+        }
+
+        function playAlarm() {
+            const activeSound = appData.equipped.sound;
+            if (activeSound === 'snd_custom' && appData.customAudioFile) {
+                if (!customAudioPlayer) customAudioPlayer = new Audio(appData.customAudioFile);
+                customAudioPlayer.play().catch(e => console.log("Audio file not found or blocked."));
+                return;
+            }
+            playAudioLogic(activeSound);
+        }
+
+        function triggerAlarm(habit) {
+            activeAlarmHabitId = habit.id;
+            document.getElementById('alarm-task-name').innerText = habit.title;
+            document.getElementById('alarm-modal').classList.remove('hidden');
+            document.getElementById('alarm-modal').classList.add('flex');
+            
+            playAlarm();
+            alarmInterval = setInterval(playAlarm, 2500);
+        }
+
+        function dismissAlarm(action) {
+            if (alarmInterval) clearInterval(alarmInterval);
+            if (alarmAudioContext) { alarmAudioContext.close(); alarmAudioContext = null; }
+            if (customAudioPlayer) { customAudioPlayer.pause(); customAudioPlayer.currentTime = 0; }
+
+            document.getElementById('alarm-modal').classList.add('hidden');
+            document.getElementById('alarm-modal').classList.remove('flex');
+
+            if (activeAlarmHabitId) {
+                const habit = appData.habits.find(h => h.id === activeAlarmHabitId);
+                if (habit) {
+                    if (action === 'start') {
+                        // Reminder acknowledgement only. It never marks the task complete.
+                        habit.notifiedToday = true;
+                        showToast(`⚡ You're on it — "${habit.title}"`);
+                    } else {
+                        let nowD = new Date();
+                        nowD.setMinutes(nowD.getMinutes() + 5);
+                        habit.time = `${String(nowD.getHours()).padStart(2, '0')}:${String(nowD.getMinutes()).padStart(2, '0')}`;
+                        habit.notifiedToday = false;
+                        showToast(`⏱ Reminder snoozed for 5 minutes`);
+                    }
+                    saveData();
+                    renderGrid();
+                }
+            }
+            activeAlarmHabitId = null;
+        }
+
+        setInterval(() => {
+            const newTodayKey = getLocalYYYYMMDD(new Date());
+            if (newTodayKey !== todayKey) { todayKey = newTodayKey; ensureProgression(); appData.progression.missionDate=''; renderGrid(); renderAnalytics(); updateHeatmapDropdown(); renderAllProgression(); }
+
+            const d = new Date();
+            const timeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+            
+            if (d.getSeconds() === 0 && !activeAlarmHabitId) {
+                appData.habits.forEach(h => {
+                    if (h.time === timeStr && !h.history[todayKey] && !h.notifiedToday) {
+                        triggerAlarm(h);
+                        h.notifiedToday = true;
+                    }
+                });
+            }
+        }, 1000);
+
+        // INITIAL LOAD
+        ensureProgression();
+        ensureTitles();
+        weeklySnapshot();
+        renderStats();
+        applyEquipped();
+        renderGrid();
+        renderAnalytics();
+        renderAllProgression();
+        setShopCategory('bg');
+        setInterval(()=>{weeklySnapshot();checkAchievements();},60000);
+    </script>
+</body>
+</html>
